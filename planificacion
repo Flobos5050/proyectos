@@ -1,0 +1,96 @@
+import psycopg2
+
+# Datos de conexión a la base de datos PostgreSQL
+conexion_data = {
+    'host': 'localhost',
+    'database': 'parcial',
+    'user': 'postgres',
+    'password': 'lobos125',
+    'port': '5434'  # Ajusta el puerto según tu configuración
+}
+
+def crear_tabla_productos(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS productos (
+                    id SERIAL PRIMARY KEY,
+                    nombre VARCHAR(255) NOT NULL,
+                    cantidad_necesaria INTEGER NOT NULL
+                );
+            """)
+            con.commit()
+    except Exception as e:
+        print("Error al crear la tabla de productos:", e)
+
+def ingresar_producto(con):
+    try:
+        nombre_producto = input("Ingrese el nombre del producto: ")
+        cantidad_necesaria = int(input("Ingrese la cantidad necesaria del producto: "))
+
+        with con.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO productos (nombre, cantidad_necesaria)
+                VALUES (%s, %s);
+            """, (nombre_producto, cantidad_necesaria))
+            con.commit()
+
+        print("Producto ingresado correctamente.")
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico para la cantidad necesaria.")
+    except Exception as e:
+        print("Error al ingresar el producto:", e)
+
+def generar_plan_produccion(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM productos")
+            datos_productos = cursor.fetchall()
+
+        if not datos_productos:
+            print("No hay datos de productos para generar un plan de producción.")
+        else:
+            print("\nPlan de Producción:")
+            print("ID\tProducto\tCantidad Necesaria")
+            for dato in datos_productos:
+                print(f"{dato[0]}\t{dato[1]}\t{dato[2]}")
+
+            # Aquí podrías implementar algoritmos de optimización para generar el plan de producción eficiente
+            # Puedes investigar sobre algoritmos como el Método Simplex, Programación Lineal, o usar bibliotecas como PuLP.
+
+    except Exception as e:
+        print("Error al generar el plan de producción:", e)
+
+if __name__ == "__main__":
+    try:
+        # Establecer conexión a la base de datos
+        conexion = psycopg2.connect(**conexion_data)
+        print("Conexión establecida a la base de datos.")
+
+        # Crear la tabla de productos si no existe
+        crear_tabla_productos(conexion)
+
+        # Menú principal
+        while True:
+            print("\n1. Ingresar producto")
+            print("2. Generar plan de producción")
+            print("3. Salir")
+
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                ingresar_producto(conexion)
+            elif opcion == "2":
+                generar_plan_produccion(conexion)
+            elif opcion == "3":
+                print("Saliendo del programa...")
+                break
+            else:
+                print("Opción no válida.")
+
+    except Exception as e:
+        print("Error de conexión:", e)
+    finally:
+        if conexion:
+            conexion.close()
+            print("Conexión cerrada.")

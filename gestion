@@ -1,0 +1,120 @@
+import psycopg2
+from datetime import datetime
+
+# Datos de conexión a la base de datos PostgreSQL
+conexion_data = {
+    'host': 'localhost',
+    'database': 'parcial',
+    'user': 'postgres',
+    'password': 'lobos125',
+    'port': '5434'  # Ajusta el puerto según tu configuración
+}
+
+def crear_tabla_inventario(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS inventario (
+                    id SERIAL PRIMARY KEY,
+                    producto VARCHAR(255) NOT NULL,
+                    cantidad INTEGER NOT NULL,
+                    precio_unitario FLOAT NOT NULL,
+                    fecha_registro TIMESTAMP NOT NULL
+                );
+            """)
+            con.commit()
+    except Exception as e:
+        print("Error al crear la tabla de inventario:", e)
+
+def agregar_producto(con):
+    try:
+        producto = input("Ingrese el nombre del producto: ")
+        cantidad = int(input("Ingrese la cantidad del producto: "))
+        precio_unitario = float(input("Ingrese el precio unitario del producto: "))
+        fecha_registro = datetime.now()
+
+        with con.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO inventario (producto, cantidad, precio_unitario, fecha_registro)
+                VALUES (%s, %s, %s, %s);
+            """, (producto, cantidad, precio_unitario, fecha_registro))
+            con.commit()
+
+        print("Producto agregado al inventario correctamente.")
+    except ValueError:
+        print("Error: Por favor, ingrese valores numéricos para cantidad y precio unitario.")
+    except Exception as e:
+        print("Error al agregar producto al inventario:", e)
+
+def actualizar_cantidad(con):
+    try:
+        producto = input("Ingrese el nombre del producto a actualizar: ")
+        nueva_cantidad = int(input("Ingrese la nueva cantidad del producto: "))
+
+        with con.cursor() as cursor:
+            cursor.execute("""
+                UPDATE inventario
+                SET cantidad = %s
+                WHERE producto = %s;
+            """, (nueva_cantidad, producto))
+            con.commit()
+
+        print("Cantidad del producto actualizada correctamente.")
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico para la nueva cantidad.")
+    except Exception as e:
+        print("Error al actualizar la cantidad del producto:", e)
+
+def generar_informe(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM inventario")
+            datos_inventario = cursor.fetchall()
+
+        if not datos_inventario:
+            print("No hay datos en el inventario para generar un informe.")
+        else:
+            print("\nInforme de Inventario:")
+            print("ID\tProducto\tCantidad\tPrecio Unitario\tFecha Registro")
+            for dato in datos_inventario:
+                print(f"{dato[0]}\t{dato[1]}\t{dato[2]}\t{dato[3]}\t{dato[4]}")
+
+    except Exception as e:
+        print("Error al generar el informe de inventario:", e)
+
+if __name__ == "__main__":
+    try:
+        # Establecer conexión a la base de datos
+        conexion = psycopg2.connect(**conexion_data)
+        print("Conexión establecida a la base de datos.")
+
+        # Crear la tabla de inventario si no existe
+        crear_tabla_inventario(conexion)
+
+        # Menú principal
+        while True:
+            print("\n1. Agregar producto al inventario")
+            print("2. Actualizar cantidad de un producto")
+            print("3. Generar informe de inventario")
+            print("4. Salir")
+
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                agregar_producto(conexion)
+            elif opcion == "2":
+                actualizar_cantidad(conexion)
+            elif opcion == "3":
+                generar_informe(conexion)
+            elif opcion == "4":
+                print("Saliendo del programa...")
+                break
+            else:
+                print("Opción no válida.")
+
+    except Exception as e:
+        print("Error de conexión:", e)
+    finally:
+        if conexion:
+            conexion.close()
+            print("Conexión cerrada.")

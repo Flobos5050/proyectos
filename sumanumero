@@ -1,0 +1,21 @@
+def suma_enteros_hasta_n(numero):
+    # Inicializar la variable para almacenar la suma
+    suma = 0
+    
+    # Validar que el número sea un entero positivo
+    if numero < 0 or not isinstance(numero, int):
+        print("Por favor, ingrese un número entero positivo.")
+        return
+    
+    # Calcular la suma de los enteros desde 0 hasta el número proporcionado
+    for i in range(numero + 1):
+        suma += i
+    
+    # Imprimir el resultado
+    print(f"La suma de todos los enteros desde 0 hasta {numero} es: {suma}")
+
+# Solicitar al usuario que ingrese un número
+numero_usuario = int(input("Ingrese un número entero positivo: "))
+
+# Llamar a la función suma_enteros_hasta_n con el número proporcionado por el usuario
+suma_enteros_hasta_n(numero_usuario)

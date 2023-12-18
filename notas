@@ -1,0 +1,55 @@
+import psycopg2
+from psycopg2 import sql
+
+# Función para calcular el promedio y determinar si está aprobado o desaprobado
+def calcular_promedio_y_aprobar():
+    # Solicitar las tres notas al usuario
+    nota1 = float(input("Ingrese la primera nota: "))
+    nota2 = float(input("Ingrese la segunda nota: "))
+    nota3 = float(input("Ingrese la tercera nota: "))
+
+    # Calcular el promedio
+    promedio = (nota1 + nota2 + nota3) / 3
+
+    # Determinar si está aprobado o desaprobado
+    estado = "Aprobado" if promedio > 60 else "Desaprobado"
+
+    print(f"El promedio de las notas es: {promedio}")
+    print(f"Resultado: {estado}")
+
+    # Guardar en la base de datos
+    try:
+        # Conectarse a la base de datos (modifica las credenciales según tu configuración)
+        connection = psycopg2.connect(
+            user="postgres",
+            password="lobos125",
+            host="localhost",
+            port="5434",
+            database="DBcorto"
+        )
+
+        # Crear un cursor
+        cursor = connection.cursor()
+
+        # Insertar el promedio y el estado en la tabla 'resultados'
+        query = sql.SQL("INSERT INTO notas (promedio, estado) VALUES ({}, {});").format(
+            sql.Literal(promedio),
+            sql.Literal(estado)
+        )
+        cursor.execute(query)
+
+        # Confirmar la transacción
+        connection.commit()
+        print("Datos guardados en la base de datos.")
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error al conectarse a la base de datos:", error)
+
+    finally:
+        # Cerrar la conexión
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Llamar a la función principal
+calcular_promedio_y_aprobar()

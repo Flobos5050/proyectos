@@ -1,0 +1,92 @@
+import psycopg2
+
+# Conéctate a la base de datos PostgreSQL
+conexion = psycopg2.connect(
+    database="parcial",
+    user="postgres",
+    password="lobos125",
+    host="localhost",
+    port="5434"
+)
+
+# Crea un cursor para ejecutar comandos SQL
+cursor = conexion.cursor()
+
+def agregar_pedido():
+    try:
+        cliente = input("Ingrese el nombre del cliente: ")
+        producto = input("Ingrese el nombre del producto: ")
+        cantidad = int(input("Ingrese la cantidad del producto: "))
+        estado = input("Ingrese el estado del pedido (pendiente, en proceso, completado): ")
+    except ValueError:
+        print("Error: Por favor, ingrese valores válidos.")
+        return
+
+    cursor.execute("INSERT INTO pedidos (cliente, producto, cantidad, estado) VALUES (%s, %s, %s, %s)",
+                   (cliente, producto, cantidad, estado))
+    conexion.commit()
+    print("Pedido agregado correctamente.")
+
+def actualizar_pedido():
+    try:
+        id_pedido = int(input("Ingrese el ID del pedido a actualizar: "))
+        cliente = input("Ingrese el nuevo nombre del cliente: ")
+        producto = input("Ingrese el nuevo nombre del producto: ")
+        cantidad = int(input("Ingrese la nueva cantidad del producto: "))
+        estado = input("Ingrese el nuevo estado del pedido (pendiente, en proceso, completado): ")
+    except ValueError:
+        print("Error: Por favor, ingrese valores válidos.")
+        return
+
+    cursor.execute("UPDATE pedidos SET cliente = %s, producto = %s, cantidad = %s, estado = %s WHERE id = %s",
+                   (cliente, producto, cantidad, estado, id_pedido))
+    conexion.commit()
+    print("Pedido actualizado correctamente.")
+
+def eliminar_pedido():
+    try:
+        id_pedido = int(input("Ingrese el ID del pedido a eliminar: "))
+    except ValueError:
+        print("Error: Por favor, ingrese un valor válido para el ID.")
+        return
+
+    cursor.execute("DELETE FROM pedidos WHERE id = %s", (id_pedido,))
+    conexion.commit()
+    print("Pedido eliminado correctamente.")
+
+def mostrar_pedidos():
+    cursor.execute("SELECT * FROM pedidos")
+    pedidos = cursor.fetchall()
+
+    if not pedidos:
+        print("No hay pedidos registrados.")
+    else:
+        print("\nLista de Pedidos:")
+        for pedido in pedidos:
+            print(f"ID: {pedido[0]}, Cliente: {pedido[1]}, Producto: {pedido[2]}, Cantidad: {pedido[3]}, Estado: {pedido[4]}")
+
+while True:
+    print("\n1. Agregar Pedido")
+    print("2. Actualizar Pedido")
+    print("3. Eliminar Pedido")
+    print("4. Mostrar Pedidos")
+    print("5. Salir")
+
+    opcion = input("Seleccione una opción (1-5): ")
+
+    if opcion == '1':
+        agregar_pedido()
+    elif opcion == '2':
+        actualizar_pedido()
+    elif opcion == '3':
+        eliminar_pedido()
+    elif opcion == '4':
+        mostrar_pedidos()
+    elif opcion == '5':
+        print("Saliendo del programa. ¡Hasta luego!")
+        break
+    else:
+        print("Opción no válida. Inténtelo nuevamente.")
+
+# Cierra la conexión con la base de datos al salir del programa
+conexion.close()

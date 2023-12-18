@@ -1,0 +1,90 @@
+import psycopg2
+
+# Conexión a la base de datos PostgreSQL (actualiza con tus propias credenciales)
+conn = psycopg2.connect(
+    database="parcial",
+    user="postgres",
+    password="lobos125",
+    host="localhost",
+    port="5434"
+)
+cursor = conn.cursor()
+
+def crear_tabla():
+    # Crear una tabla para almacenar la información de los estudiantes
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS estudiantes (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(100),
+            edad INTEGER,
+            genero VARCHAR(10),
+            direccion VARCHAR(200)
+        );
+    ''')
+    conn.commit()
+
+def agregar_estudiante():
+    try:
+        nombre = input("Ingrese el nombre del estudiante: ")
+        edad = int(input("Ingrese la edad del estudiante: "))
+        genero = input("Ingrese el género del estudiante: ")
+        direccion = input("Ingrese la dirección del estudiante: ")
+
+        cursor.execute('''
+            INSERT INTO estudiantes (nombre, edad, genero, direccion)
+            VALUES (%s, %s, %s, %s)
+        ''', (nombre, edad, genero, direccion))
+        conn.commit()
+
+        print("Estudiante agregado correctamente.")
+    except (ValueError, psycopg2.Error) as e:
+        print(f"Error: {e}")
+
+def ver_historial():
+    cursor.execute('SELECT * FROM estudiantes;')
+    estudiantes = cursor.fetchall()
+
+    if not estudiantes:
+        print("No hay estudiantes registrados.")
+    else:
+        for estudiante in estudiantes:
+            print(estudiante)
+
+def eliminar_estudiante():
+    ver_historial()
+    try:
+        id_estudiante = int(input("Ingrese el ID del estudiante que desea eliminar: "))
+        cursor.execute('DELETE FROM estudiantes WHERE id = %s;', (id_estudiante,))
+        conn.commit()
+        print("Estudiante eliminado correctamente.")
+    except (ValueError, psycopg2.Error) as e:
+        print(f"Error: {e}")
+
+def menu():
+    while True:
+        print("\nMENU:")
+        print("1. Agregar estudiante")
+        print("2. Ver historial")
+        print("3. Eliminar estudiante")
+        print("4. Salir")
+
+        opcion = input("Ingrese el número de la opción deseada: ")
+
+        if opcion == "1":
+            agregar_estudiante()
+        elif opcion == "2":
+            ver_historial()
+        elif opcion == "3":
+            eliminar_estudiante()
+        elif opcion == "4":
+            break
+        else:
+            print("Opción no válida. Intente de nuevo.")
+
+if __name__ == "__main__":
+    crear_tabla()
+    menu()
+
+# Cerrar la conexión al salir del programa
+cursor.close()
+conn.close()

@@ -1,0 +1,90 @@
+import psycopg2
+
+# Conéctate a la base de datos PostgreSQL
+conexion = psycopg2.connect(
+    database="parcial",
+    user="postgres",
+    password="lobos125",
+    host="localhost",
+    port="5434"
+)
+
+# Crea un cursor para ejecutar comandos SQL
+cursor = conexion.cursor()
+
+def agregar_producto():
+    try:
+        nombre = input("Ingrese el nombre del producto: ")
+        cantidad = int(input("Ingrese la cantidad del producto: "))
+        precio = float(input("Ingrese el precio del producto: "))
+    except ValueError:
+        print("Error: Por favor, ingrese valores válidos.")
+        return
+
+    cursor.execute("INSERT INTO productos (nombre, cantidad, precio) VALUES (%s, %s, %s)",
+                   (nombre, cantidad, precio))
+    conexion.commit()
+    print("Producto agregado correctamente.")
+
+def actualizar_producto():
+    try:
+        id_producto = int(input("Ingrese el ID del producto a actualizar: "))
+        nuevo_nombre = input("Ingrese el nuevo nombre del producto: ")
+        nueva_cantidad = int(input("Ingrese la nueva cantidad del producto: "))
+        nuevo_precio = float(input("Ingrese el nuevo precio del producto: "))
+    except ValueError:
+        print("Error: Por favor, ingrese valores válidos.")
+        return
+
+    cursor.execute("UPDATE productos SET nombre = %s, cantidad = %s, precio = %s WHERE id = %s",
+                   (nuevo_nombre, nueva_cantidad, nuevo_precio, id_producto))
+    conexion.commit()
+    print("Producto actualizado correctamente.")
+
+def eliminar_producto():
+    try:
+        id_producto = int(input("Ingrese el ID del producto a eliminar: "))
+    except ValueError:
+        print("Error: Por favor, ingrese un valor válido para el ID.")
+        return
+
+    cursor.execute("DELETE FROM productos WHERE id = %s", (id_producto,))
+    conexion.commit()
+    print("Producto eliminado correctamente.")
+
+def mostrar_inventario():
+    cursor.execute("SELECT * FROM productos")
+    inventario = cursor.fetchall()
+
+    if not inventario:
+        print("El inventario está vacío.")
+    else:
+        print("\nInventario:")
+        for producto in inventario:
+            print(f"ID: {producto[0]}, Nombre: {producto[1]}, Cantidad: {producto[2]}, Precio: {producto[3]}")
+
+while True:
+    print("\n1. Agregar Producto")
+    print("2. Actualizar Producto")
+    print("3. Eliminar Producto")
+    print("4. Mostrar Inventario")
+    print("5. Salir")
+
+    opcion = input("Seleccione una opción (1-5): ")
+
+    if opcion == '1':
+        agregar_producto()
+    elif opcion == '2':
+        actualizar_producto()
+    elif opcion == '3':
+        eliminar_producto()
+    elif opcion == '4':
+        mostrar_inventario()
+    elif opcion == '5':
+        print("Saliendo del programa. ¡Hasta luego!")
+        break
+    else:
+        print("Opción no válida. Inténtelo nuevamente.")
+
+# Cierra la conexión con la base de datos al salir del programa
+conexion.close()

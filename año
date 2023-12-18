@@ -1,0 +1,55 @@
+import psycopg2
+from psycopg2 import sql
+
+def es_bisiesto(anio):
+    # Determinar si el año es bisiesto
+    return (anio % 4 == 0 and anio % 100 != 0) or (anio % 400 == 0)
+
+def almacenar_en_postgres(anio, bisiesto):
+    try:
+        # Conectarse a la base de datos (modifica las credenciales según tu configuración)
+        connection = psycopg2.connect(
+            user="postgres",
+            password="lobos125",
+            host="localhost",
+            port="5434",
+            database="DBcorto"
+        )
+
+        # Crear un cursor
+        cursor = connection.cursor()
+
+        # Insertar el año y si es bisiesto en la tabla 'anos_bisiestos'
+        query = sql.SQL("INSERT INTO bisiesto (año, bisiesto) VALUES ({}, {});").format(
+            sql.Literal(anio),
+            sql.Literal(bisiesto)
+        )
+        cursor.execute(query)
+
+        # Confirmar la transacción
+        connection.commit()
+        print("Datos guardados en la base de datos.")
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error al conectarse a la base de datos:", error)
+
+    finally:
+        # Cerrar la conexión
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Solicitar al usuario que ingrese el año de nacimiento
+anio_nacimiento = int(input("Ingrese el año de nacimiento: "))
+
+# Determinar si el año es bisiesto
+bisiesto = es_bisiesto(anio_nacimiento)
+
+# Imprimir el resultado
+if bisiesto:
+    print(f"{anio_nacimiento} es un año bisiesto.")
+else:
+    print(f"{anio_nacimiento} no es un año bisiesto.")
+
+# Almacenar en PostgreSQL
+almacenar_en_postgres(anio_nacimiento, bisiesto)

@@ -1,0 +1,122 @@
+import psycopg2
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import datetime
+
+# Datos de conexión a la base de datos PostgreSQL
+conexion_data = {
+    'host': 'localhost',
+    'database': 'parcial',
+    'user': 'postgres',
+    'password': 'lobos125',
+    'port': '5434'  # Ajusta el puerto según tu configuración
+}
+
+def crear_tabla_sensores(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sensores (
+                    id SERIAL PRIMARY KEY,
+                    nombre VARCHAR(255) NOT NULL,
+                    medicion FLOAT NOT NULL,
+                    fecha TIMESTAMP NOT NULL
+                );
+            """)
+            con.commit()
+    except Exception as e:
+        print("Error al crear la tabla de sensores:", e)
+
+def ingresar_datos_sensor(con):
+    try:
+        nombre_sensor = input("Ingrese el nombre del sensor: ")
+        medicion_sensor = float(input("Ingrese el valor de la medición: "))
+        fecha_sensor = datetime.now()
+
+        with con.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO sensores (nombre, medicion, fecha)
+                VALUES (%s, %s, %s);
+            """, (nombre_sensor, medicion_sensor, fecha_sensor))
+            con.commit()
+
+        print("Datos del sensor ingresados correctamente.")
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico para la medición.")
+    except Exception as e:
+        print("Error al ingresar datos del sensor:", e)
+
+def ver_datos_en_grafica(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT fecha, medicion FROM sensores ORDER BY fecha")
+            datos = cursor.fetchall()
+
+        if not datos:
+            print("No hay datos de sensores para mostrar en la gráfica.")
+        else:
+            fechas = [dato[0] for dato in datos]
+            mediciones = [dato[1] for dato in datos]
+
+            plt.plot(fechas, mediciones)
+            plt.xlabel('Fecha y Hora')
+            plt.ylabel('Medición')
+            plt.title('Datos de Sensores')
+            plt.show()
+
+    except Exception as e:
+        print("Error al obtener datos para la gráfica:", e)
+
+def ver_datos_en_tabla(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM sensores ORDER BY fecha")
+            datos = cursor.fetchall()
+
+        if not datos:
+            print("No hay datos de sensores para mostrar en la tabla.")
+        else:
+            print("\nDatos de Sensores:")
+            print("ID\tNombre\tMedición\tFecha")
+            for dato in datos:
+                print(f"{dato[0]}\t{dato[1]}\t{dato[2]}\t{dato[3]}")
+
+    except Exception as e:
+        print("Error al obtener datos para la tabla:", e)
+
+if __name__ == "__main__":
+    try:
+        # Establecer conexión a la base de datos
+        conexion = psycopg2.connect(**conexion_data)
+        print("Conexión establecida a la base de datos.")
+
+        # Crear la tabla de sensores si no existe
+        crear_tabla_sensores(conexion)
+
+        # Menú principal
+        while True:
+            print("\n1. Ingresar datos de sensor")
+            print("2. Ver datos en gráfica")
+            print("3. Ver datos en tabla")
+            print("4. Salir")
+
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                ingresar_datos_sensor(conexion)
+            elif opcion == "2":
+                ver_datos_en_grafica(conexion)
+            elif opcion == "3":
+                ver_datos_en_tabla(conexion)
+            elif opcion == "4":
+                print("Saliendo del programa...")
+                break
+            else:
+                print("Opción no válida.")
+
+    except Exception as e:
+        print("Error de conexión:", e)
+    finally:
+        if conexion:
+            conexion.close()
+            print("Conexión cerrada.")

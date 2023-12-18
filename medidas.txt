@@ -1,0 +1,3 @@
+Ingrese el primer lado de un triángulo: 5
+Ingrese el segundo lado de un triángulo: 4
+Ingrese el tercer lado de un triángulo: 3

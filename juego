@@ -1,0 +1,96 @@
+import psycopg2
+
+# Función para iniciar el juego
+def jugar(con):
+    try:
+        vidas = 3
+        puntaje = 0
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM preguntas")
+            preguntas = cursor.fetchall()
+            if not preguntas:
+                print("No hay preguntas almacenadas.")
+                return
+            
+            print("¡Bienvenido al concurso!")
+            for pregunta in preguntas:
+                print(f"Pregunta: {pregunta[0]}")
+                respuesta_usuario = input("Ingrese su respuesta: ")
+                
+                if respuesta_usuario.lower() == pregunta[1].lower():
+                    print("¡Respuesta correcta! +1 punto")
+                    puntaje += 1
+                else:
+                    print("Respuesta incorrecta. -1 vida")
+                    vidas -= 1
+                
+                print(f"Punteo actual: {puntaje}")
+                if vidas == 0:
+                    print("¡Perdiste todas tus vidas!")
+                    break
+            
+            print(f"Puntaje final: {puntaje}")
+    except Exception as e:
+        print("Error al jugar:", e)
+
+# Función para ver las instrucciones
+def mostrar_instrucciones():
+    print("Instrucciones del juego:")
+    print("Responde las preguntas correctamente para ganar puntos.")
+    print("Tienes 3 vidas. Si pierdes todas las vidas, el juego termina.")
+
+# Función para ver las preguntas almacenadas
+def ver_preguntas(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM preguntas")
+            preguntas = cursor.fetchall()
+            if preguntas:
+                print("Preguntas almacenadas:")
+                for pregunta in preguntas:
+                    print(f"Pregunta: {pregunta[0]}, Respuesta: {pregunta[1]}")
+            else:
+                print("No hay preguntas almacenadas.")
+    except Exception as e:
+        print("Error al ver las preguntas:", e)
+
+# Datos de conexión a la base de datos
+conexion_data = {
+    "host": "localhost",
+    "user": "postgres",
+    "password": "lobos125",
+    "database": "parcial",
+    "port": "5434"
+}
+
+try:
+    # Establecer conexión a la base de datos
+    conexion = psycopg2.connect(**conexion_data)
+    print("Conexión establecida a la base de datos.")
+    
+    # Menú principal
+    while True:
+        print("1. Jugar")
+        print("2. Instrucciones")
+        print("3. Ver preguntas")
+        print("4. Salir")
+        
+        opcion = input("Seleccione una opción: ")
+        
+        if opcion == "1":
+            jugar(conexion)
+        elif opcion == "2":
+            mostrar_instrucciones()
+        elif opcion == "3":
+            ver_preguntas(conexion)
+        elif opcion == "4":
+            print("Saliendo del programa...")
+            break
+        else:
+            print("Opción no válida.")
+except Exception as e:
+    print("Error de conexión:", e)
+finally:
+    if conexion:
+        conexion.close()
+        print("Conexión cerrada.")

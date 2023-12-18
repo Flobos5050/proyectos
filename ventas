@@ -1,0 +1,74 @@
+import psycopg2
+from datetime import date
+
+# Conéctate a la base de datos PostgreSQL
+conexion = psycopg2.connect(
+    database="parcial",
+    user="postgres",
+    password="lobos125",
+    host="localhost",
+    port="5434"
+)
+
+# Crea un cursor para ejecutar comandos SQL
+cursor = conexion.cursor()
+
+def agregar_venta():
+    try:
+        producto = input("Ingrese el nombre del producto vendido: ")
+        cantidad = int(input("Ingrese la cantidad vendida: "))
+        fecha = date.today()
+        monto = float(input("Ingrese el monto total de la venta: "))
+    except ValueError:
+        print("Error: Por favor, ingrese valores válidos.")
+        return
+
+    cursor.execute("INSERT INTO ventas (producto, cantidad, fecha, monto) VALUES (%s, %s, %s, %s)",
+                   (producto, cantidad, fecha, monto))
+    conexion.commit()
+    print("Venta registrada correctamente.")
+
+def generar_informe_ventas():
+    cursor.execute("SELECT fecha, SUM(cantidad) AS cantidad_total, SUM(monto) AS monto_total FROM ventas GROUP BY fecha")
+    informe_ventas = cursor.fetchall()
+
+    if not informe_ventas:
+        print("No hay ventas registradas.")
+    else:
+        print("\nInforme de Ventas:")
+        for venta in informe_ventas:
+            print(f"Fecha: {venta[0]}, Cantidad Total: {venta[1]}, Monto Total: {venta[2]}")
+
+def analizar_patrones_ventas():
+    cursor.execute("SELECT EXTRACT(MONTH FROM fecha) AS mes, SUM(cantidad) AS cantidad_total FROM ventas GROUP BY mes")
+    patrones_ventas = cursor.fetchall()
+
+    if not patrones_ventas:
+        print("No hay datos suficientes para analizar patrones de ventas.")
+    else:
+        print("\nAnálisis de Patrones de Ventas:")
+        for patron in patrones_ventas:
+            print(f"Mes: {int(patron[0])}, Cantidad Total: {patron[1]}")
+
+while True:
+    print("\n1. Agregar Venta")
+    print("2. Generar Informe de Ventas")
+    print("3. Analizar Patrones de Ventas")
+    print("4. Salir")
+
+    opcion = input("Seleccione una opción (1-4): ")
+
+    if opcion == '1':
+        agregar_venta()
+    elif opcion == '2':
+        generar_informe_ventas()
+    elif opcion == '3':
+        analizar_patrones_ventas()
+    elif opcion == '4':
+        print("Saliendo del programa. ¡Hasta luego!")
+        break
+    else:
+        print("Opción no válida. Inténtelo nuevamente.")
+
+# Cierra la conexión con la base de datos al salir del programa
+conexion.close()

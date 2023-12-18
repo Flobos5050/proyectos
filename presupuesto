@@ -1,0 +1,123 @@
+import psycopg2
+from datetime import date
+
+# Conéctate a la base de datos PostgreSQL
+conexion = psycopg2.connect(
+    database="parcial",
+    user="postgres",
+    password="lobos125",
+    host="localhost",
+    port="5434"
+)
+
+# Crea un cursor para ejecutar comandos SQL
+cursor = conexion.cursor()
+
+def inicializar_presupuesto():
+    try:
+        presupuesto_inicial = float(input("Ingrese el presupuesto inicial: "))
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico.")
+        return
+
+    cursor.execute("INSERT INTO presupuesto (monto) VALUES (%s)", (presupuesto_inicial,))
+    conexion.commit()
+    print("Presupuesto inicializado correctamente.")
+
+def ingresar_gasto():
+    try:
+        concepto = input("Ingrese el concepto del gasto: ")
+        monto = float(input("Ingrese el monto del gasto: "))
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico para el monto.")
+        return
+
+    fecha = date.today()
+    cursor.execute("INSERT INTO gastos (concepto, monto, fecha) VALUES (%s, %s, %s)",
+                   (concepto, monto, fecha))
+    conexion.commit()
+    print("Gasto ingresado exitosamente.")
+
+def ver_resumen():
+    cursor.execute("SELECT concepto, monto, fecha FROM gastos ORDER BY fecha DESC")
+    resumen = cursor.fetchall()
+
+    if not resumen:
+        print("No hay gastos registrados.")
+    else:
+        print("\nResumen de gastos:")
+        for gasto in resumen:
+            print(f"Concepto: {gasto[0]}, Monto: {gasto[1]}, Fecha: {gasto[2]}")
+
+def ver_presupuesto_disponible():
+    cursor.execute("SELECT monto FROM presupuesto ORDER BY id DESC LIMIT 1")
+    presupuesto_actual = cursor.fetchone()
+
+    if presupuesto_actual:
+        print(f"\nPresupuesto disponible: {presupuesto_actual[0]}")
+    else:
+        print("No hay presupuesto registrado.")
+
+def calcular_saldo_disponible():
+    cursor.execute("SELECT COALESCE(SUM(monto), 0) FROM gastos")
+    total_gastos = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COALESCE(monto, 0) FROM presupuesto ORDER BY id DESC LIMIT 1")
+    presupuesto_actual = cursor.fetchone()[0]
+
+    saldo_disponible = presupuesto_actual - total_gastos
+    print(f"\nSaldo disponible: {saldo_disponible}")
+
+def ajustar_presupuesto():
+    try:
+        nuevo_presupuesto = float(input("Ingrese el nuevo presupuesto: "))
+    except ValueError:
+        print("Error: Por favor, ingrese un valor numérico.")
+        return
+
+    cursor.execute("INSERT INTO presupuesto (monto) VALUES (%s)", (nuevo_presupuesto,))
+    conexion.commit()
+    print("Presupuesto ajustado correctamente.")
+
+def limpiar_registros():
+    confirmacion = input("¿Está seguro de limpiar todos los registros? (s/n): ")
+    if confirmacion.lower() == 's':
+        cursor.execute("DELETE FROM gastos")
+        cursor.execute("DELETE FROM presupuesto")
+        conexion.commit()
+        print("Registros limpiados correctamente.")
+
+while True:
+    print("\n1. Inicializar Presupuesto")
+    print("2. Ingresar Gasto")
+    print("3. Ver Resumen de Gastos")
+    print("4. Ver Presupuesto Disponible")
+    print("5. Calcular Saldo Disponible")
+    print("6. Ajustar Presupuesto")
+    print("7. Limpiar Registros")
+    print("8. Salir")
+
+    opcion = input("Seleccione una opción (1-8): ")
+
+    if opcion == '1':
+        inicializar_presupuesto()
+    elif opcion == '2':
+        ingresar_gasto()
+    elif opcion == '3':
+        ver_resumen()
+    elif opcion == '4':
+        ver_presupuesto_disponible()
+    elif opcion == '5':
+        calcular_saldo_disponible()
+    elif opcion == '6':
+        ajustar_presupuesto()
+    elif opcion == '7':
+        limpiar_registros()
+    elif opcion == '8':
+        print("Saliendo del programa. ¡Hasta luego!")
+        break
+    else:
+        print("Opción no válida. Inténtelo nuevamente.")
+
+# Cierra la conexión con la base de datos al salir del programa
+conexion.close()

@@ -1,0 +1,89 @@
+import psycopg2
+
+# Función para desplegar el listado de canciones
+def desplegar_listado_canciones(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM canciones")
+            canciones = cursor.fetchall()
+            if canciones:
+                print("Listado de canciones:")
+                for cancion in canciones:
+                    print(f"Artista: {cancion[0]}, Canción: {cancion[1]}, Letra: {cancion[2]}")
+            else:
+                print("No hay canciones almacenadas.")
+    except Exception as e:
+        print("Error al desplegar el listado de canciones:", e)
+
+# Función para buscar por artista
+def buscar_por_artista(con):
+    try:
+        artista = input("Ingrese el nombre del artista: ")
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM canciones WHERE artista ILIKE %s", ('%' + artista + '%',))
+            canciones = cursor.fetchall()
+            if canciones:
+                print(f"Canciones de '{artista}':")
+                for cancion in canciones:
+                    print(f"Canción: {cancion[1]}, Letra: {cancion[2]}")
+            else:
+                print(f"No se encontraron canciones para '{artista}'.")
+    except Exception as e:
+        print("Error al buscar por artista:", e)
+
+# Función para buscar por canción
+def buscar_por_cancion(con):
+    try:
+        cancion = input("Ingrese el nombre de la canción: ")
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM canciones WHERE canción ILIKE %s", ('%' + cancion + '%',))
+            canciones = cursor.fetchall()
+            if canciones:
+                print(f"Canciones con nombre '{cancion}':")
+                for cancion in canciones:
+                    print(f"Artista: {cancion[0]}, Letra: {cancion[2]}")
+            else:
+                print(f"No se encontraron canciones con nombre '{cancion}'.")
+    except Exception as e:
+        print("Error al buscar por canción:", e)
+
+# Datos de conexión a la base de datos
+conexion_data = {
+    "host": "localhost",
+    "user": "postgres",
+    "password": "lobos125",
+    "database": "parcial",
+    "port": "5434"
+}
+
+try:
+    # Establecer conexión a la base de datos
+    conexion = psycopg2.connect(**conexion_data)
+    print("Conexión establecida a la base de datos.")
+    
+    # Menú principal
+    while True:
+        print("1. Desplegar el listado de canciones")
+        print("2. Buscar por artista")
+        print("3. Buscar por canción")
+        print("4. Salir")
+        
+        opcion = input("Seleccione una opción: ")
+        
+        if opcion == "1":
+            desplegar_listado_canciones(conexion)
+        elif opcion == "2":
+            buscar_por_artista(conexion)
+        elif opcion == "3":
+            buscar_por_cancion(conexion)
+        elif opcion == "4":
+            print("Saliendo del programa...")
+            break
+        else:
+            print("Opción no válida.")
+except Exception as e:
+    print("Error de conexión:", e)
+finally:
+    if conexion:
+        conexion.close()
+        print("Conexión cerrada.")

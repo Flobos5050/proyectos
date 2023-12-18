@@ -1,0 +1,133 @@
+import psycopg2
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+
+# Datos de conexión a la base de datos PostgreSQL
+conexion_data = {
+    'host': 'localhost',
+    'database': 'parcial',
+    'user': 'postgres',
+    'password': 'lobos125',
+    'port': '5434'  # Ajusta el puerto según tu configuración
+}
+
+def crear_tabla_peliculas(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS peliculas (
+                    id SERIAL PRIMARY KEY,
+                    nombre VARCHAR(255) NOT NULL,
+                    genero VARCHAR(255) NOT NULL
+                );
+            """)
+            con.commit()
+    except Exception as e:
+        print("Error al crear la tabla de películas:", e)
+
+def ingresar_datos_pelicula(con):
+    try:
+        nombre_pelicula = input("Ingrese el nombre de la película: ")
+        genero_pelicula = input("Ingrese el género de la película: ")
+
+        with con.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO peliculas (nombre, genero)
+                VALUES (%s, %s);
+            """, (nombre_pelicula, genero_pelicula))
+            con.commit()
+
+        print("Datos de la película ingresados correctamente.")
+    except Exception as e:
+        print("Error al ingresar datos de la película:", e)
+
+def crear_modelo(con):
+    try:
+        with con.cursor() as cursor:
+            cursor.execute("SELECT * FROM peliculas")
+            datos_peliculas = cursor.fetchall()
+
+        nombres_peliculas = [pelicula[1] for pelicula in datos_peliculas]
+        generos_peliculas = [pelicula[2] for pelicula in datos_peliculas]
+
+        # Crear una representación vectorial de los datos de las películas
+        vectorizador = TfidfVectorizer(stop_words='english')
+        matriz_vectorial = vectorizador.fit_transform(generos_peliculas)
+
+        # Calcular la similitud del coseno entre las películas
+        similitud_coseno = linear_kernel(matriz_vectorial, matriz_vectorial)
+
+        return nombres_peliculas, similitud_coseno
+
+    except Exception as e:
+        print("Error al crear el modelo:", e)
+        return [], []
+
+def recomendar_peliculas(modelo, nombres_peliculas, pelicula, num_recomendaciones=5):
+    try:
+        indice_pelicula = nombres_peliculas.index(pelicula)
+
+        # Obtener las puntuaciones de similitud para la película dada
+        similitudes = list(enumerate(modelo[indice_pelicula]))
+
+        # Ordenar las películas según la similitud
+        similitudes = sorted(similitudes, key=lambda x: x[1], reverse=True)
+
+        # Obtener las películas recomendadas
+        peliculas_recomendadas = similitudes[1:num_recomendaciones+1]
+
+        return [nombres_peliculas[indice] for indice, _ in peliculas_recomendadas]
+
+    except ValueError:
+        print(f"No se encontró la película {pelicula}.")
+        return []
+
+if __name__ == "__main__":
+    try:
+        # Establecer conexión a la base de datos
+        conexion = psycopg2.connect(**conexion_data)
+        print("Conexión establecida a la base de datos.")
+
+        # Crear la tabla de películas si no existe
+        crear_tabla_peliculas(conexion)
+
+        # Menú principal
+        while True:
+            print("\n1. Ingresar datos de película")
+            print("2. Crear modelo de recomendación")
+            print("3. Recomendar películas")
+            print("4. Salir")
+
+            opcion = input("Seleccione una opción: ")
+
+            if opcion == "1":
+                ingresar_datos_pelicula(conexion)
+            elif opcion == "2":
+                nombres_peliculas, modelo = crear_modelo(conexion)
+                print("Modelo de recomendación creado.")
+            elif opcion == "3":
+                if not modelo:
+                    print("Primero, cree el modelo de recomendación.")
+                    continue
+
+                pelicula_a_recomendar = input("Ingrese el nombre de la película a recomendar: ")
+                recomendaciones = recomendar_peliculas(modelo, nombres_peliculas, pelicula_a_recomendar)
+
+                if recomendaciones:
+                    print(f"\n¡Recomendaciones de películas para '{pelicula_a_recomendar}'!")
+                    for recomendacion in recomendaciones:
+                        print(recomendacion)
+                else:
+                    print("No se pudieron hacer recomendaciones en este momento.")
+            elif opcion == "4":
+                print("Saliendo del programa...")
+                break
+            else:
+                print("Opción no válida.")
+
+    except Exception as e:
+        print("Error de conexión:", e)
+    finally:
+        if conexion:
+            conexion.close()
+            print("Conexión cerrada.")
