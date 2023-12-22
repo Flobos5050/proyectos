@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ academia['nombre'] }}</title>
+</head>
+<body>
+    <h1>{{ academia['nombre'] }}</h1>
+    <p>{{ academia['descripcion'] }}</p>
+
+    <h2>Servicios ofrecidos:</h2>
+    <ul>
+        {% for servicio in academia['servicios'] %}
+            <li>{{ servicio }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Precios:</h2>
+    <ul>
+        {% for curso, precio in academia['precios'].items() %}
+            <li>{{ curso }}: {{ precio }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
